@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Reader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-blue-100 min-h-screen flex flex-col justify-between items-center">
+  <!-- Header Section -->
+  <header class="bg-blue-500 w-full py-6 shadow-md">
+    <h1 class="text-center text-white text-3xl font-bold tracking-wider">QR Code Reader</h1>
+  </header>
+
+  <!-- Main Content Section -->
+  <main class="flex-grow w-full max-w-4xl p-6">
+    <div class="bg-white shadow-lg rounded-lg p-6 border border-blue-200">
+      <!-- Live Video Feedback -->
+      <div class="flex flex-col items-center mb-8">
+        <h2 class="text-2xl font-semibold text-blue-700 mb-4">Live Video Feedback</h2>
+        <div class="w-full h-64 bg-blue-50 border-2 border-blue-300 rounded-lg flex items-center justify-center">
+          <video id="video-feed" autoplay playsinline class="w-full h-full object-cover rounded-lg"></video>
+        </div>
+      </div>
+
+      <!-- Person Details -->
+      <div>
+        <h2 class="text-2xl font-semibold text-blue-700 mb-4">Person Details</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-blue-600">
+          <div class="flex items-center">
+            <span class="font-medium text-blue-900">Name:</span>
+            <span id="person-name" class="ml-2">Waiting for QR Code...</span>
+          </div>
+          <div class="flex items-center">
+            <span class="font-medium text-blue-900">Seat Number:</span>
+            <span id="seat-number" class="ml-2">Waiting for QR Code...</span>
+          </div>
+          <div class="flex items-center">
+            <span class="font-medium text-blue-900">Starting Location:</span>
+            <span id="start-location" class="ml-2">Waiting for QR Code...</span>
+          </div>
+          <div class="flex items-center">
+            <span class="font-medium text-blue-900">Destination:</span>
+            <span id="destination" class="ml-2">Waiting for QR Code...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- JavaScript -->
+  <script>
+    const video = document.getElementById("video-feed");
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    // Start video stream
+    async function startVideo() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+        video.srcObject = stream;
+      } catch (err) {
+        alert("Error accessing camera: " + err.message);
+      }
+    }
+
+    // Analyze QR code from video feed
+    async function analyzeQrCode() {
+      try {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const qrCode = jsQR(imageData.data, canvas.width, canvas.height);
+
+        if (qrCode) {
+          console.log("QR Code Data:", qrCode.data);
+
+          // Send QR code data to the backend
+          fetch('/process_qr', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ qrData: qrCode.data })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log("Response from backend:", data);
+
+            // Update the frontend
+            const qrInfo = JSON.parse(qrCode.data);
+            document.getElementById('person-name').textContent = qrInfo.name || "Unknown";
+            document.getElementById('seat-number').textContent = qrInfo.seat_number || "N/A";
+            document.getElementById('start-location').textContent = qrInfo.start_location || "Unknown";
+            document.getElementById('destination').textContent = qrInfo.destination || "Unknown";
+          })
+          .catch(err => console.error("Error sending data to backend:", err));
+        } else {
+          console.log("No QR code detected.");
+        }
+      } catch (err) {
+        console.error("Error analyzing QR code:", err);
+      }
+    }
+
+    // Periodically analyze the video feed
+    setInterval(() => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        analyzeQrCode();
+      }
+    }, 1000);
+
+    // Start the video on page load
+    startVideo();
+  </script>
+</body>
+</html>

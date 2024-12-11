@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Reader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Additional custom styling */
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-blue-100 min-h-screen flex flex-col justify-between items-center">
+  <!-- Header Section -->
+  <header class="bg-blue-500 w-full py-6 shadow-md">
+    <h1 class="text-center text-white text-3xl font-bold tracking-wider">QR Code Reader</h1>
+  </header>
+
+  <!-- Main Content Section -->
+  <main class="flex-grow w-full max-w-4xl p-6">
+    <div class="bg-white shadow-lg rounded-lg p-6 border border-blue-200">
+      <!-- Live Video Feedback -->
+      <div class="flex flex-col items-center mb-8">
+        <h2 class="text-2xl font-semibold text-blue-700 mb-4">Live Video Feedback</h2>
+        <div class="w-full h-64 bg-blue-50 border-2 border-blue-300 rounded-lg flex items-center justify-center">
+          <!-- Video Placeholder -->
+          <img id="video-feed" class="w-full h-full object-cover rounded-lg" src="http://192.168.43.1:8080/video" alt="Video Stream">
+        </div>
+      </div>
+
+      <!-- Person Details -->
+      <div>
+        <h2 class="text-2xl font-semibold text-blue-700 mb-4">Person Details</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 text-blue-600">
+          <div class="flex items-center">
+            <span class="font-medium text-blue-900">Name:</span>
+            <span id="person-name" class="ml-2">Waiting for QR Code...</span>
+          </div>
+          <div class="flex items-center">
+            <span class="font-medium text-blue-900">Seat Number:</span>
+            <span id="seat-number" class="ml-2">Waiting for QR Code...</span>
+          </div>
+          <div class="flex items-center">
+            <span class="font-medium text-blue-900">Starting Location:</span>
+            <span id="start-location" class="ml-2">Waiting for QR Code...</span>
+          </div>
+          <div class="flex items-center">
+            <span class="font-medium text-blue-900">Destination:</span>
+            <span id="destination" class="ml-2">Waiting for QR Code...</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- JavaScript -->
+  <script>
+    // JavaScript logic for handling video feedback and dynamic data can be added here.
+    const video = document.getElementById("video-feed");
+    
+    // Replace with your ESP32-CAM video stream URL
+    const streamURL = "http://192.168.43.1:8080/video";
+    video.src = streamURL;
+    video.onerror = () => {
+    alert("Failed to load video stream. Please check your ESP32-CAM connection.");
+};
+
+    // Function to fetch QR code data from Flask backend
+    async function fetchQrData() {
+  try {
+    const response = await fetch('/get_qr_data');
+    const data = await response.json();
+    console.log('Fetched Data:', data);  // Check the full response
+
+    if (data.user) {
+      const qrInfo = data.user;
+      // Parse the QR data assuming it's in JSON format
+      try {
+
+        // Update the HTML with the parsed QR code data
+        document.getElementById('person-name').textContent = qrInfo.name || "Unknown";
+        document.getElementById('seat-number').textContent = qrInfo.seat_number || "N/A";
+        document.getElementById('start-location').textContent = qrInfo.start_location || "Unknown";
+        document.getElementById('destination').textContent = qrInfo.destination || "Unknown";
+      } catch (e) {
+        console.error('Error parsing QR data:', e);
+      }
+    } else {
+      // If no QR data is available
+      document.getElementById('person-name').textContent = "Waiting for QR Code...";
+      document.getElementById('seat-number').textContent = "Waiting for QR Code...";
+      document.getElementById('start-location').textContent = "Waiting for QR Code...";
+      document.getElementById('destination').textContent = "Waiting for QR Code...";
+    }
+  } catch (err) {
+    console.error("Error fetching QR data:", err);
+  }
+}
+
+// Fetch QR data every 1 second
+setInterval(fetchQrData, 1000);
+
+  </script>
+</body>
+</html>

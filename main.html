@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QR Code Reader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-blue-100 min-h-screen flex flex-col justify-between items-center">
+  <!-- Header Section -->
+  <header class="bg-blue-500 w-full py-6 shadow-md">
+    <h1 class="text-center text-white text-3xl font-bold tracking-wider">QR Code Reader</h1>
+  </header>
+
+  <!-- Main Content Section -->
+  <main class="flex-grow w-full max-w-4xl p-6">
+    <div class="bg-white shadow-lg rounded-lg p-6 border border-blue-200">
+      <!-- Live Video Feedback -->
+       <!-- http://192.168.43.2:80/ We should always mention the port number with the url else it will not work in your own website -->
+      <div class="flex flex-col items-center mb-8">
+        <h2 class="text-2xl font-semibold text-blue-700 mb-4">Live Video Feedback</h2>
+        <div class="w-full h-64 bg-blue-50 border-2 border-blue-300 rounded-lg flex items-center justify-center">
+          <img id="video-stream" class="w-full h-full object-cover rounded-lg" 
+               src="http://192.168.43.2:80/mjpeg" 
+               alt="Live Video Stream">
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const videoStream = document.getElementById("video-stream");
+    videoStream.onerror = () => {
+      console.error("Failed to load the live video stream. Please check the IP Webcam app connection.");
+      alert("Failed to load the live video stream. Check the IP Webcam app or the URL.");
+    };
+  </script>
+</body>
+</html>
