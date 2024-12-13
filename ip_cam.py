@@ -64,7 +64,7 @@ def get_qr_data():
     try:
         qr_data_json = json.loads(qr_data)  # Parse the JSON string into a Python dictionary
         qr_id = qr_data_json.get('id')  # Extract the 'id' field from the JSON object
-        print(qr_id,"I am parsed to dictionary")
+        print("I am parsed to dictionary")
     except json.JSONDecodeError:
         return jsonify({'error': 'Invalid QR data format'}), 400
 
